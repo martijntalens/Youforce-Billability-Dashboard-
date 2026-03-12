@@ -441,7 +441,7 @@ mark { background: rgba(255,102,0,0.32); color: #FFB07A; border-radius: 3px; pad
 // ════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════
-const monthsData = {};
+let monthsData = {};
 let activeMonth = null;
 let activeTab   = 'overzicht';
 
@@ -557,23 +557,39 @@ const STORAGE_KEY = 'youforce_billability_data';
 
 function saveToStorage() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(monthsData));
-    showToast('✓ Data opgeslagen in deze browser');
+    const json = JSON.stringify(monthsData);
+    const kb = Math.round(json.length / 1024);
+    localStorage.setItem(STORAGE_KEY, json);
+    const verify = localStorage.getItem(STORAGE_KEY);
+    if (verify) {
+      showToast('✓ Opgeslagen in browser (' + kb + ' KB)');
+      console.log('[Storage] OK:', kb, 'KB, maanden:', Object.keys(monthsData));
+    } else {
+      showToast('⚠️ Opslaan mislukt (verificatie)');
+    }
   } catch(e) {
-    console.warn('localStorage niet beschikbaar:', e);
+    console.warn('[Storage] Fout bij opslaan:', e);
+    if (e.name === 'QuotaExceededError') {
+      showToast('⚠️ Data te groot voor browser-opslag (>5MB)');
+    } else {
+      showToast('⚠️ Opslaan mislukt: ' + e.message);
+    }
   }
 }
 
 function loadFromStorage() {
   try {
+    console.log('[Storage] Laden van sleutel:', STORAGE_KEY);
     const raw = localStorage.getItem(STORAGE_KEY);
+    console.log('[Storage] Gevonden:', raw ? Math.round(raw.length/1024) + ' KB' : 'niets');
     if (!raw) return false;
     const parsed = JSON.parse(raw);
     if (typeof parsed !== 'object' || !Object.keys(parsed).length) return false;
     monthsData = parsed;
+    console.log('[Storage] Geladen maanden:', Object.keys(monthsData));
     return true;
   } catch(e) {
-    console.warn('Fout bij laden uit localStorage:', e);
+    console.warn('[Storage] Fout bij laden:', e);
     return false;
   }
 }
@@ -588,7 +604,7 @@ function clearStorage() {
     document.getElementById('search-wrap').classList.remove('visible');
     document.getElementById('pdfBtn').classList.remove('visible');
     document.getElementById('wisBtn').classList.remove('visible');
-    document.getElementById('search-input').value = '';
+    document.getElementById('searchInput').value = '';
     document.getElementById('search-results').classList.remove('visible');
     document.querySelectorAll('.tab-panel').forEach(p => p.style.display = '');
     document.getElementById('tab-nav').style.display = '';
