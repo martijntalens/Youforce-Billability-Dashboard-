@@ -99,6 +99,17 @@ body::before {
 #pdfBtn.visible { display: flex; }
 #pdfBtn:hover { background: #e05500; transform: translateY(-2px); }
 
+/* ── UPLOAD BTN ──────────────────────── */
+#uploadBtn {
+  display: none; align-items: center; gap: 9px; padding: 14px 22px;
+  background: transparent; border: 2px solid rgba(255,255,255,0.35);
+  border-radius: 32px; color: rgba(255,255,255,0.75);
+  font-family: Ubuntu, sans-serif; font-size: 0.9rem; font-weight: 500;
+  cursor: pointer; transition: all .2s; white-space: nowrap; flex-shrink: 0;
+}
+#uploadBtn.visible { display: flex; }
+#uploadBtn:hover { border-color: var(--mid-green); color: #fff; transform: translateY(-2px); }
+
 /* ── WIS DATA BTN ────────────────────── */
 #wisBtn {
   display: none; align-items: center; gap: 9px; padding: 14px 22px;
@@ -243,12 +254,13 @@ body::before {
   font-size: 0.9rem;
   table-layout: fixed;
 }
-.uren-table colgroup col:nth-child(1) { width: 18%; }  /* Klant */
-.uren-table colgroup col:nth-child(2) { width: 14%; }  /* Project */
-.uren-table colgroup col:nth-child(3) { width: 36%; }  /* Omschrijving */
-.uren-table colgroup col:nth-child(4) { width: 14%; }  /* Work type */
-.uren-table colgroup col:nth-child(5) { width: 8%;  }  /* Uren */
-.uren-table colgroup col:nth-child(6) { width: 10%; }  /* Type */
+.uren-table colgroup col:nth-child(1) { width: 15%; }  /* Klant */
+.uren-table colgroup col:nth-child(2) { width: 9%;  }  /* Klantnr */
+.uren-table colgroup col:nth-child(3) { width: 13%; }  /* Project */
+.uren-table colgroup col:nth-child(4) { width: 31%; }  /* Omschrijving */
+.uren-table colgroup col:nth-child(5) { width: 13%; }  /* Work type */
+.uren-table colgroup col:nth-child(6) { width: 8%;  }  /* Uren */
+.uren-table colgroup col:nth-child(7) { width: 11%; }  /* Type */
 
 .uren-table th {
   text-align: left; padding: 12px 16px; font-size: 0.72rem; font-weight: 600;
@@ -261,8 +273,8 @@ body::before {
 }
 .uren-table tr:last-child td { border-bottom: none; }
 .uren-table tr:hover td { background: rgba(255,255,255,0.04); }
-.uren-table th:nth-child(5),
-.uren-table td:nth-child(5) { text-align: right; font-weight: 600; }
+.uren-table th:nth-child(6),
+.uren-table td:nth-child(6) { text-align: right; font-weight: 600; }
 
 .tag {
   display: inline-block; padding: 4px 12px; border-radius: 20px;
@@ -342,6 +354,14 @@ mark { background: rgba(255,102,0,0.32); color: #FFB07A; border-radius: 3px; pad
     <input id="searchInput" type="text" placeholder="Zoek op klant, project, omschrijving…" autocomplete="off">
     <button id="searchClear" title="Wis zoekopdracht">✕</button>
   </div>
+  <input type="file" id="csvInputTop" accept=".csv,text/csv,text/plain" multiple style="display:none">
+  <button id="uploadBtn" title="Voeg meer CSV-bestanden toe">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    CSV toevoegen
+  </button>
   <button id="wisBtn" title="Verwijder opgeslagen data uit deze browser">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
       <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -384,9 +404,9 @@ mark { background: rgba(255,102,0,0.32); color: #FFB07A; border-radius: 3px; pad
   <div id="search-results" class="g-card">
     <div id="search-count"></div>
     <table class="uren-table" id="search-table">
-      <colgroup><col><col><col><col><col><col></colgroup>
+      <colgroup><col><col><col><col><col><col><col></colgroup>
       <thead><tr>
-        <th>Datum</th><th>Klant</th><th>Omschrijving</th>
+        <th>Datum</th><th>Klant</th><th>Klantnr</th><th>Omschrijving</th>
         <th>Work type</th><th>Uren</th><th>Type</th>
       </tr></thead>
       <tbody id="search-tbody"></tbody>
@@ -476,6 +496,7 @@ function parseCsv(text) {
   const hdr = lines[0].map(h => h.trim().toLowerCase());
   const idx = n => hdr.indexOf(n.toLowerCase());
   const iDate=idx('date'), iHours=idx('hours'), iCust=idx('customer'),
+        iCustNr=idx('customer number'),
         iProj=idx('project number'), iPhase=idx('phase'),
         iWork=idx('work type'), iDesc=idx('description'), iPerson=idx('person');
 
@@ -487,6 +508,7 @@ function parseCsv(text) {
       date:        (row[iDate]||'').trim(),
       hours:       hrs,
       customer:    (row[iCust]||'').trim(),
+      customerNr:  (iCustNr >= 0 ? (row[iCustNr]||'') : '').trim(),
       project:     (row[iProj]||'').trim(),
       phase:       (row[iPhase]||'').trim(),
       workType:    (row[iWork]||'').trim(),
@@ -497,13 +519,18 @@ function parseCsv(text) {
   return rows;
 }
 
-function monthFromRows(rows) {
+function monthFromRow(r) {
   const MONTHS = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  let m = r.date.match(/^\d{2}-(\d{2})-(\d{4})$/);
+  if (m) return MONTHS[parseInt(m[1],10)-1] + ' ' + m[2];
+  m = r.date.match(/^(\d{4})-(\d{2})/);
+  if (m) return MONTHS[parseInt(m[2],10)-1] + ' ' + m[1];
+  return 'Onbekend';
+}
+function monthFromRows(rows) {
   for (const r of rows) {
-    let m = r.date.match(/^\d{2}-(\d{2})-(\d{4})$/);
-    if (m) return MONTHS[parseInt(m[1],10)-1] + ' ' + m[2];
-    m = r.date.match(/^(\d{4})-(\d{2})/);
-    if (m) return MONTHS[parseInt(m[2],10)-1] + ' ' + m[1];
+    const lbl = monthFromRow(r);
+    if (lbl !== 'Onbekend') return lbl;
   }
   return 'Onbekend';
 }
@@ -544,7 +571,22 @@ async function handleFiles(files) {
     const text = await loadFile(file);
     const rows = parseCsv(text);
     if (!rows.length) continue;
-    monthsData[monthFromRows(rows)] = rows;
+    // Split rows by month — one file can contain multiple months
+    const byMonth = {};
+    for (const r of rows) {
+      const lbl = monthFromRow(r);
+      if (!byMonth[lbl]) byMonth[lbl] = [];
+      byMonth[lbl].push(r);
+    }
+    for (const [lbl, mrs] of Object.entries(byMonth)) {
+      if (!monthsData[lbl]) monthsData[lbl] = [];
+      // Merge: add rows not already present (deduplicate by date+customer+hours)
+      const existing = new Set(monthsData[lbl].map(r => r.date+'|'+r.customer+'|'+r.hours+'|'+r.description));
+      for (const r of mrs) {
+        const key = r.date+'|'+r.customer+'|'+r.hours+'|'+r.description;
+        if (!existing.has(key)) { monthsData[lbl].push(r); existing.add(key); }
+      }
+    }
   }
   saveToStorage();
   renderAll();
@@ -604,6 +646,7 @@ function clearStorage() {
     document.getElementById('search-wrap').classList.remove('visible');
     document.getElementById('pdfBtn').classList.remove('visible');
     document.getElementById('wisBtn').classList.remove('visible');
+    document.getElementById('uploadBtn').classList.remove('visible');
     document.getElementById('searchInput').value = '';
     document.getElementById('search-results').classList.remove('visible');
     document.querySelectorAll('.tab-panel').forEach(p => p.style.display = '');
@@ -616,7 +659,13 @@ function clearStorage() {
 //  RENDER ALL
 // ════════════════════════════════════════
 function renderAll() {
-  const labels = Object.keys(monthsData);
+  const MONTHS = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  const labelSort = lbl => {
+    const m = lbl.match(/^(\w+)\s+(\d{4})$/);
+    if (!m) return 0;
+    return parseInt(m[2]) * 100 + MONTHS.indexOf(m[1]);
+  };
+  const labels = Object.keys(monthsData).sort((a,b) => labelSort(a) - labelSort(b));
   if (!labels.length) return;
 
   document.getElementById('upload-section').style.display = 'none';
@@ -624,6 +673,7 @@ function renderAll() {
   document.getElementById('search-wrap').classList.add('visible');
   document.getElementById('pdfBtn').classList.add('visible');
   document.getElementById('wisBtn').classList.add('visible');
+  document.getElementById('uploadBtn').classList.add('visible');
 
   document.getElementById('trendTabBtn').style.display = labels.length > 1 ? '' : 'none';
 
@@ -728,7 +778,7 @@ function renderUren(rows) {
   }
   const fmt = v => v%1===0?v.toFixed(0):v.toFixed(1);
   const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const colgroup = `<colgroup><col style="width:18%"><col style="width:14%"><col style="width:36%"><col style="width:14%"><col style="width:8%"><col style="width:10%"></colgroup>`;
+  const colgroup = `<colgroup><col style="width:15%"><col style="width:9%"><col style="width:13%"><col style="width:31%"><col style="width:13%"><col style="width:8%"><col style="width:11%"></colgroup>`;
 
   document.getElementById('uren-content').innerHTML = Object.keys(byDate).sort().map(d => {
     const dayRows = byDate[d];
@@ -739,6 +789,7 @@ function renderUren(rows) {
       else                    { tag='Billable';     cls='tag-billable'; }
       return `<tr>
         <td title="${esc(r.customer)}">${esc(r.customer)}</td>
+        <td>${esc(r.customerNr||'')}</td>
         <td title="${esc(r.project)}">${esc(r.project)}</td>
         <td title="${esc(r.description)}">${esc(r.description)}</td>
         <td title="${esc(r.workType)}">${esc(r.workType)}</td>
@@ -751,7 +802,7 @@ function renderUren(rows) {
       <table class="uren-table">
         ${colgroup}
         <thead><tr>
-          <th>Klant</th><th>Project</th><th>Omschrijving</th>
+          <th>Klant</th><th>Klantnr</th><th>Project</th><th>Omschrijving</th>
           <th>Work type</th><th>Uren</th><th>Type</th>
         </tr></thead>
         <tbody>${rowsHtml}</tbody>
@@ -940,7 +991,7 @@ function doSearch(q) {
   const fmt = v => v%1===0?v.toFixed(0):v.toFixed(1);
   const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
   function hl(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(re, m => `<mark>${m}</mark>`); }
-  const colgroup = `<colgroup><col style="width:12%"><col style="width:18%"><col style="width:36%"><col style="width:14%"><col style="width:8%"><col style="width:12%"></colgroup>`;
+  const colgroup = `<colgroup><col style="width:10%"><col style="width:14%"><col style="width:8%"><col style="width:30%"><col style="width:14%"><col style="width:8%"><col style="width:10%"></colgroup>`;
 
   document.getElementById('search-table').querySelector('colgroup')?.remove();
   document.getElementById('search-table').insertAdjacentHTML('afterbegin', colgroup);
@@ -955,6 +1006,7 @@ function doSearch(q) {
       return `<tr>
         <td>${hl(r.date)}</td>
         <td title="${r.customer}">${hl(r.customer)}</td>
+        <td>${hl(r.customerNr||'')}</td>
         <td title="${r.description}">${hl(r.description)}</td>
         <td>${hl(r.workType)}</td>
         <td>${fmt(r.hours)}</td>
@@ -1000,6 +1052,14 @@ if (loadFromStorage()) {
 // ════════════════════════════════════════
 //  WIS DATA BUTTON
 // ════════════════════════════════════════
+document.getElementById('uploadBtn').addEventListener('click', () => {
+  document.getElementById('csvInputTop').click();
+});
+document.getElementById('csvInputTop').addEventListener('change', () => {
+  handleFiles(Array.from(document.getElementById('csvInputTop').files));
+  document.getElementById('csvInputTop').value = '';
+});
+
 document.getElementById('wisBtn').addEventListener('click', () => {
   if (confirm('Weet je zeker dat je alle opgeslagen data wilt verwijderen?\nDeze actie kan niet ongedaan worden gemaakt.')) {
     clearStorage();
@@ -1177,8 +1237,8 @@ document.getElementById('pdfBtn').addEventListener('click', () => {
     const dates = Object.keys(byDate).sort();
 
     // Column layout
-    const COL = { date:20, cust:46, proj:96, desc:136, work:196, hrs:236, type:249 };
-    const COL_W = { date:24, cust:48, proj:38, desc:58, work:38, hrs:12, type:40 };
+    const COL = { date:20, cust:44, custNr:82, proj:104, desc:142, work:196, hrs:234, type:248 };
+    const COL_W = { date:22, cust:36, custNr:20, proj:36, desc:52, work:36, hrs:12, type:40 };
     const ROW_H = 6;
     const HEADER_Y = 28;
     const DATA_START = HEADER_Y + 8;
@@ -1197,8 +1257,8 @@ document.getElementById('pdfBtn').addEventListener('click', () => {
       // Table header
       doc.setFillColor(13,60,61);
       doc.rect(18, HEADER_Y-4, PW-36, 8, 'F');
-      const headers = ['Datum','Klant','Project','Omschrijving','Work type','Uren','Type'];
-      const colKeys = ['date','cust','proj','desc','work','hrs','type'];
+      const headers = ['Datum','Klant','Klantnr','Project','Omschrijving','Work type','Uren','Type'];
+      const colKeys = ['date','cust','custNr','proj','desc','work','hrs','type'];
       doc.setFontSize(7); doc.setFont('helvetica','bold');
       doc.setTextColor(100,200,200);
       headers.forEach((h,i) => doc.text(h, COL[colKeys[i]], HEADER_Y));
@@ -1238,8 +1298,9 @@ document.getElementById('pdfBtn').addEventListener('click', () => {
         doc.setTextColor(200,230,230);
         // truncate helper
         function tr(s,n){ return s.length>n ? s.slice(0,n-1)+'…' : s; }
-        doc.text(tr(r.customer,   22), COL.cust, curY+1);
-        doc.text(tr(r.project,    16), COL.proj, curY+1);
+        doc.text(tr(r.customer,   18), COL.cust, curY+1);
+        doc.text(tr(r.customerNr||'', 10), COL.custNr, curY+1);
+        doc.text(tr(r.project,    14), COL.proj, curY+1);
         doc.text(tr(r.description,25), COL.desc, curY+1);
         doc.text(tr(r.workType,   16), COL.work, curY+1);
         doc.setTextColor(255,255,255);
