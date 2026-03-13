@@ -413,9 +413,9 @@ mark { background: rgba(255,102,0,0.32); color: #FFB07A; border-radius: 3px; pad
   <div id="search-results" class="g-card">
     <div id="search-count"></div>
     <table class="uren-table" id="search-table">
-      <colgroup><col><col><col><col><col><col><col></colgroup>
+      <colgroup><col><col><col><col><col><col><col><col></colgroup>
       <thead><tr>
-        <th>Datum</th><th>Klant</th><th>Klantnr</th><th>Omschrijving</th>
+        <th>Datum</th><th>Klant</th><th>Klantnr</th><th>Project</th><th>Omschrijving</th>
         <th>Work type</th><th>Uren</th><th>Type</th>
       </tr></thead>
       <tbody id="search-tbody"></tbody>
@@ -1008,7 +1008,7 @@ function doSearch(q) {
   const fmt = v => v%1===0?v.toFixed(0):v.toFixed(1);
   const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
   function hl(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(re, m => `<mark>${m}</mark>`); }
-  const colgroup = `<colgroup><col style="width:10%"><col style="width:14%"><col style="width:8%"><col style="width:30%"><col style="width:14%"><col style="width:8%"><col style="width:10%"></colgroup>`;
+  const colgroup = `<colgroup><col style="width:9%"><col style="width:13%"><col style="width:8%"><col style="width:12%"><col style="width:24%"><col style="width:13%"><col style="width:7%"><col style="width:9%"></colgroup>`;
 
   document.getElementById('search-table').querySelector('colgroup')?.remove();
   document.getElementById('search-table').insertAdjacentHTML('afterbegin', colgroup);
@@ -1024,6 +1024,7 @@ function doSearch(q) {
         <td>${hl(r.date)}</td>
         <td title="${r.customer}">${hl(r.customer)}</td>
         <td>${hl(r.customerNr||'')}</td>
+        <td title="${r.project}">${hl(r.project)}</td>
         <td title="${r.description}">${hl(r.description)}</td>
         <td>${hl(r.workType)}</td>
         <td>${fmt(r.hours)}</td>
