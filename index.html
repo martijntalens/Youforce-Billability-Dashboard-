@@ -797,7 +797,8 @@ function renderUren(rows) {
   const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const colgroup = `<colgroup><col style="width:15%"><col style="width:9%"><col style="width:13%"><col style="width:31%"><col style="width:13%"><col style="width:8%"><col style="width:11%"></colgroup>`;
 
-  document.getElementById('uren-content').innerHTML = Object.keys(byDate).sort().map(d => {
+  const dateSort = d => { const m = d.match(/^(\d{2})-(\d{2})-(\d{4})$/); return m ? +m[3]*10000 + +m[2]*100 + +m[1] : 0; };
+  document.getElementById('uren-content').innerHTML = Object.keys(byDate).sort((a,b) => dateSort(b) - dateSort(a)).map(d => {
     const dayRows = byDate[d];
     const rowsHtml = dayRows.map(r => {
       let tag, cls;
@@ -885,7 +886,9 @@ function renderKlanten(rows) {
 
 // ── TREND ──────────────────────────────
 function renderTrend() {
-  const labels = Object.keys(monthsData);
+  const MONTHS = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  const labelSort = lbl => { const m = lbl.match(/^(\w+)\s+(\d{4})$/); return m ? +m[2]*100+MONTHS.indexOf(m[1]) : 0; };
+  const labels = Object.keys(monthsData).sort((a,b) => labelSort(a) - labelSort(b));
   const statsArr = labels.map(l => ({ label: l, ...calcStats(monthsData[l]) }));
 
   const canvas = document.getElementById('trendCanvas');
