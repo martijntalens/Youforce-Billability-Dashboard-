@@ -2,9 +2,17 @@
   "name": "Youforce Billability Dashboard",
   "short_name": "Billability",
   "description": "Dashboard voor urenregistratie en declarabiliteit",
+  "id": "/Youforce-Billability-Dashboard-/index.html",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#001F20",
   "theme_color": "#075354",
-  "icons": []
+  "icons": [
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
