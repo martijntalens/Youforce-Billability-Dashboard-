@@ -10,7 +10,7 @@
   "icons": [
     {
       "src": "./icon.png",
-      "sizes": "512x512",
+      "sizes": "600×300",
       "type": "image/png",
       "purpose": "any"
     }
@@ -18,13 +18,13 @@
   "screenshots": [
     {
       "src": "./screenshot-desktop.png",
-      "sizes": "1280x720",
+      "sizes": "2234×1265",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
       "src": "./screenshot-mobile.png",
-      "sizes": "750x1334",
+      "sizes": "483×1055",
       "type": "image/png"
     }
   ]
